@@ -62,7 +62,7 @@ const unlockPasswordInput = async (page) => {
                     console.log(2)
                     await page.click('.hg-button-controlleft')
                     resolve(true)
-                }, 2000)
+                }, 800)
             })
     })
 }
@@ -76,32 +76,7 @@ const getValidateNumber = async (base64Str) => {
     })
 }
 
-const retryToGetImgNumber = async (base64Str) => {
-    return await new Promise(async (resolve, reject) => {
-        let valiNumber
-        // valiNumber = await getValidateNumber(base64Str)
-        // resolve(valiNumber)
-
-        for (let i = 0; i < 10; i++) {
-            valiNumber = ''
-            valiNumber = await getValidateNumber(base64Str)
-            if (valiNumber.toString().length == 7) {
-                console.log('resolve 1')
-                resolve(valiNumber)
-                break
-            }
-            console.log(valiNumber)
-
-            if (i == 9) {
-                console.log('resolve 2')
-                resolve(valiNumber)
-            }
-            continue
-        }
-    })
-}
-
-
+// return
 openPage().then(async (page) => {
 
     // debugger;
@@ -131,41 +106,42 @@ openPage().then(async (page) => {
                         const src = await validateImage.getProperty('src')
                         let base64Str = src._remoteObject.value
 
-                        let valiNumber = await retryToGetImgNumber(base64Str)
+                        let valiNumber = await getValidateNumber(base64Str)
                         console.log(6)
-
 
                         const numberInput = await page.$('input[type=number].el-input__inner')
                         await numberInput.type(valiNumber)
 
-                    }).then(async () => {
-
-                        await page.waitForSelector('button[type=button].login-button')
-                            .then(async () => {
-                                console.log(7)
-                                // await (await page.$('button[type=button].login-button')).click()
-                            })
-                    })
-                console.log(8)
-
-            }).then(async () => {
-
-                console.log(9)
-                await page.waitForSelector('#punch_in')
-                    .then(async () => {
-                        console.log(10)
-                        // 上班打卡
-                        // await (await page.$('#punch_in')).click()
-                    })
-                    .catch(e => {
-                        console.log(e)
+                        return !!(valiNumber.toString().length == 5)
+                    }).then(async (toClick) => {
+                        console.log('click :', toClick)
+                        if (toClick) {
+                            // await page.waitForSelector('button[type=button].login-button')
+                            //     .then(async () => {
+                            //         console.log(7)
+                            //         await (await page.$('button[type=button].login-button')).click()
+                            //     })
+                        }
+                        console.log(8)
+                        return toClick
+                    }).then(async (toClick) => {
+                        console.log(9)
+                        if (toClick) {
+                            await page.waitForSelector('#punch_in')
+                                .then(async () => {
+                                    console.log(10)
+                                    // 上班打卡
+                                    await (await page.$('#punch_in')).click()
+                                })
+                                .catch(e => {
+                                    console.log(e)
+                                })
+                        }
                     })
 
 
             })
 
-    }, 2000)
-
-
+    }, 1200)
 
 })
