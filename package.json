@@ -1,5 +1,5 @@
 {
-  "name": "test",
+  "name": "auto-login-verify-number-image-punch-in",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
@@ -7,7 +7,7 @@
     "dev": "nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "jack shi",
   "license": "ISC",
   "dependencies": {
     "dotenv": "^10.0.0",
