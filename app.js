@@ -2,12 +2,66 @@ require('dotenv').config()
 const puppeteer = require("puppeteer")
 const { createWorker } = require('tesseract.js')
 const worker = createWorker()
+const prompts = require('prompts')
+const config = require('./config')
 
-const url = 'https://www.bck6688.com/login'
+let toDo
 
-const loginInfo = {
-    account: process.env.account,
-    password: process.env.password
+const askWhatToDo = async () => {
+    const response = await prompts(config.initQuestions)
+    switch (response.action) {
+        case 1:
+            toDo = 'punchIn'
+            console.log('執行打卡上班')
+            break
+        case 2:
+            toDo = 'punchOut'
+            console.log('執行打卡下班')
+            break
+        default:
+            toDo = 'nothing'
+            console.log('已確認不動作')
+    }
+}
+
+const openPage = async () => {
+
+    await askWhatToDo().then(() => {
+        console.log('To Do : ' + toDo)
+        if (toDo == 'nothing') process.exit()
+    })
+
+    const browser = await puppeteer.launch({
+        channel: 'chrome',
+        headless: false, // 背景運行
+        defaultViewport: null, // 设置页面视口大小，默认800*600，如果为null的话就禁用视图口
+        args: ['--start-maximized'], // 最大化视窗
+        ignoreDefaultArgs: ['--enable-automation'], // 禁止展示chrome左上角有个Chrome正受自动软件控制，避免puppeteer被前端JS检测到
+        devtools: true, // F12瀏覽器檢查
+    })
+    const page = await browser.newPage()
+
+    await page.goto(config.url.login)
+
+    page.once('load', () => console.log('Page loaded!'))
+
+    page.on('console', async err => {
+
+        if (err.type() === 'error') {
+            console.log(err)
+            if (err.location().url == config.url.loginPost) {
+                console.log('Retry input number')
+                await (await page.$('.el-message-box__headerbtn')).click()
+
+                setTimeout(async () => {
+                    let valiNumber = await fillByValidatorNumberImage(page, true)
+                    await afterValidateNumber(page, valiNumber)
+                }, 2000)
+            }
+        }
+    })
+
+    return page
 }
 
 const getNumberByBase64Img = async (base64, init) => {
@@ -26,40 +80,6 @@ const getNumberByBase64Img = async (base64, init) => {
 
     // if (!init) await worker.terminate()
     return text
-}
-
-const openPage = async () => {
-    const browser = await puppeteer.launch({
-        channel: 'chrome',
-        headless: false, // 背景運行
-        defaultViewport: null, // 设置页面视口大小，默认800*600，如果为null的话就禁用视图口
-        args: ['--start-maximized'], // 最大化视窗
-        ignoreDefaultArgs: ['--enable-automation'], // 禁止展示chrome左上角有个Chrome正受自动软件控制，避免puppeteer被前端JS检测到
-        devtools: true, // F12瀏覽器檢查
-    })
-    const page = await browser.newPage()
-
-    await page.goto(url)
-
-    page.once('load', () => console.log('Page loaded!'))
-
-    page.on('console', async err => {
-
-        if (err.type() === 'error') {
-            console.log(err)
-            if (err.location().url == 'https://pub.bck6688.com/api/login') {
-                console.log('Retry input number')
-                await (await page.$('.el-message-box__headerbtn')).click()
-
-                setTimeout(async () => {
-                    let valiNumber = await fillByValidatorNumberImage(page, true)
-                    await afterValidateNumber(page, valiNumber)
-                }, 2000)
-            }
-        }
-    })
-
-    return page
 }
 
 const unlockPasswordInput = async (page) => {
@@ -119,10 +139,22 @@ const toClickPunchIn = async (page, valiNumber) => {
 
 const afterValidateNumber = async (page, valiNumber) => {
     if (await toClickPunchIn(page, valiNumber)) {
+        console.log('afterValidateNumber')
         await page.waitForSelector('#punch_in')
             .then(async () => {
                 // click 上班打卡
-                await (await page.$('#punch_in')).click()
+                switch (toDo) {
+                    case 'punchIn':
+                        await (await page.$('#punch_in')).click()
+                        break
+                    case 'punchOut':
+                        // await (await page.$('#punch_out')).click()
+                        setTimeout(async () => {
+                            await (await page.$('.toggle-menu')).click()
+                        }, 3000)
+                        console.log('下班')
+                        break
+                }
             })
             .catch(e => {
                 console.log(e)
@@ -130,7 +162,6 @@ const afterValidateNumber = async (page, valiNumber) => {
     }
 }
 
-// return
 openPage().then(async (page) => {
     // debugger;
     setTimeout(async () => {
@@ -143,9 +174,9 @@ openPage().then(async (page) => {
                 await unlockPasswordInput(page)
                     .then(async () => {
                         const inputAccount = await page.$('.el-input__inner')
-                        await inputAccount.type(loginInfo.account)
+                        await inputAccount.type(config.loginInfo.account)
                         const realInsidePwInput = await page.$('input[type=password].input')
-                        await realInsidePwInput.type(loginInfo.password)
+                        await realInsidePwInput.type(config.loginInfo.password)
                     })
                     .then(async () => {
                         await (await page.$('.hg-button-enter')).click()
