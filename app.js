@@ -157,10 +157,11 @@ const afterValidateNumber = async (page, valiNumber) => {
                         await (await page.$('#punch_in')).click()
                         break
                     case 'punchOut':
-                        // await (await page.$('#punch_out')).click()
-                        setTimeout(async () => {
-                            await (await page.$('.toggle-menu')).click()
-                        }, 3000)
+                        await (await page.$('#punch_out')).click()
+                        // Test:
+                        // setTimeout(async () => {
+                        //     await (await page.$('.toggle-menu')).click()
+                        // }, 3000)
                         console.log('下班')
                         break
                 }
