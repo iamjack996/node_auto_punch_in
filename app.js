@@ -65,7 +65,7 @@ const openPage = async () => {
                 setTimeout(async () => {
                     let valiNumber = await fillByValidatorNumberImage(page, true)
                     await afterValidateNumber(page, valiNumber)
-                }, 2000)
+                }, 1000)
             }
         }
     })
