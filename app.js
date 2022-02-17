@@ -5,6 +5,7 @@ const worker = createWorker()
 const prompts = require('prompts')
 const config = require('./config')
 const child_process = require('child_process')
+const appSite = process.env.app_site
 
 let toDo
 
@@ -50,7 +51,9 @@ const openPage = async () => {
     })
     const page = await browser.newPage()
 
-    await page.goto(config.url.login)
+    const { login, loginPost } = config.url[appSite]
+
+    await page.goto(login)
 
     page.once('load', () => console.log('Page loaded!'))
 
@@ -58,7 +61,7 @@ const openPage = async () => {
 
         if (err.type() === 'error') {
             console.log(err)
-            if (err.location().url == config.url.loginPost) {
+            if (err.location().url == loginPost) {
                 console.log('Retry input number')
                 await (await page.$('.el-message-box__headerbtn')).click()
 
@@ -132,7 +135,7 @@ const fillByValidatorNumberImage = async (page, secondExec = false) => {
     })
 }
 
-const toClickPunchIn = async (page, valiNumber) => {
+const toClickLogin = async (page, valiNumber) => {
     return await new Promise(async (resolve, reject) => {
         if (valiNumber === '9999') {
             await page.waitForSelector('button[type=button].login-button')
@@ -147,7 +150,7 @@ const toClickPunchIn = async (page, valiNumber) => {
 }
 
 const afterValidateNumber = async (page, valiNumber) => {
-    if (await toClickPunchIn(page, valiNumber)) {
+    if (await toClickLogin(page, valiNumber)) {
         console.log('afterValidateNumber')
         await page.waitForSelector('#punch_in')
             .then(async () => {
@@ -192,8 +195,10 @@ openPage().then(async (page) => {
                         await (await page.$('.hg-button-enter')).click()
                     })
                     .then(async () => {
+
+
                         // 開始驗證圖片數字
-                        let valiNumber = await fillByValidatorNumberImage(page)
+                        let valiNumber = (appSite === 'master') ? await fillByValidatorNumberImage(page) : '7777'
                         await afterValidateNumber(page, valiNumber)
                     })
             })
