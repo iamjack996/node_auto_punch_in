@@ -42,7 +42,6 @@ const login = async () => {
             employee: account,
             password
         }
-
         if (appSite === 'master') {
             loginData = {
                 ...loginData,
@@ -76,14 +75,12 @@ const init = async () => {
         if (toDo === 'nothing') return
 
         let token = await login()
-
         let headers = {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
         }
 
         // console.log('打卡')
-        // console.log(headers)
         // console.log(config.url[appSite].punch + (toDo == 'punchIn' ? '0' : '1'))
 
         axios
@@ -103,5 +100,3 @@ const init = async () => {
 }
 
 init()
-
-
