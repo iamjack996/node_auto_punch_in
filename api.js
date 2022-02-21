@@ -8,8 +8,6 @@ const { account, password } = process.env
 
 let toDo
 
-// 打卡 https://pub-bck.bckplat.info/api/punchCard/0  => 0上班 config.punch+0 , 1下班 config.punch+1
-
 const execCommand = (cmd) => {
     child_process.exec(cmd, function (error, stdout, stderr) {
         if (error) console.log(error)
@@ -36,51 +34,71 @@ const askWhatToDo = async () => {
 }
 
 const login = async () => {
-    console.log(account, password)
-    axios
-        .post(config.url[appSite].loginPostForApi, { account, password }, {
-            headers: {
-                'Content-Type': 'application/json'
+    console.log(appSite === 'master' ? '正式站打卡' : '測試站打卡')
+
+    return new Promise(async (resolve, reject) => {
+
+        let loginData = {
+            employee: account,
+            password
+        }
+
+        if (appSite === 'master') {
+            loginData = {
+                ...loginData,
+                captcha: '5720',
+                key: '$2y$10$ZNQzIIiWpyuBoeSLnTFKS.GWNSCAcjhCfQHuYP.fuuIT4qHvT99la'
             }
-        })
-        .then(res => {
-            console.log(`statusCode: ${res.status}`)
-            console.log(res.data)
-        })
-        .catch(error => {
-            console.error(error)
-        })
+        }
+
+        axios
+            .post(config.url[appSite].loginPostForApi, loginData, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(res => {
+                // console.log(`statusCode: ${res.status}`)
+                // console.log(res.data)
+
+                if (res.status == 200) console.log('登入成功')
+                resolve(res.data.data.apiToken)
+            })
+            .catch(error => {
+                console.error(error)
+            })
+    })
 }
 
 const init = async () => {
     await askWhatToDo().then(async () => {
 
-        await login()
-        return
+        if (toDo === 'nothing') return
 
-        token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vcHViLmJjay5iY2twbGF0LmluZm8vYXBpL2xvZ2luIiwiaWF0IjoxNjQ1MDkzMDMzLCJleHAiOjE2NDUxMjkwMzMsIm5iZiI6MTY0NTA5MzAzMywianRpIjoibHVEMDF1VFFTT1BDenVvWiIsInN1YiI6MTAyNDQyLCJwcnYiOiI4N2UwYWYxZWY5ZmQxNTgxMmZkZWM5NzE1M2ExNGUwYjA0NzU0NmFhIiwiaWQiOjEwMjQ0MiwidXVpZCI6ImM2OTllNjYwLThmZGEtMTFlYy05YjlkLTQ5NGRiYTE1MjUyZSIsImVtcGxveWVlIjoiMjAyMTA1MDUiLCJjb21wYW55Q29kZSI6ImJjayIsImlkQ29tcGFueSI6MSwiaWREZXBhcnRtZW50Ijo4LCJsZXZlbCI6MTAsIm5pY2tOYW1lIjoiU2luIiwiaXAiOiIxOTIuMTY4LjIwLjI1NCJ9.l4mzoXfbzDdk-7VyfXxX6SlfKcUdkSW3aq8-US7S684'
+        let token = await login()
 
         let headers = {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
         }
 
-        console.log(headers)
-        console.log(config.url[appSite].punch + (toDo == 'punchIn' ? '0' : '1'))
+        // console.log('打卡')
+        // console.log(headers)
+        // console.log(config.url[appSite].punch + (toDo == 'punchIn' ? '0' : '1'))
 
         axios
             .post(config.url[appSite].punch + (toDo == 'punchIn' ? '0' : '1'), { account, password }, {
                 headers
             })
             .then(res => {
-                console.log(`statusCode: ${res.status}`)
-                console.log(res.data)
+                // console.log(`statusCode: ${res.status}`)
+
+                if (res.status == 200) console.log('打卡成功')
+                // console.log(res.data)
             })
             .catch(error => {
                 console.error(error)
             })
-
-
     })
 }
 

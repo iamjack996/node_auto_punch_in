@@ -3,15 +3,16 @@ module.exports = {
     url: {
         master: {
             login: 'https://www.bck6688.com/login',
-            loginPost: 'https://pub.bck6688.com/api/login'
+            loginPost: 'https://pub.bck6688.com/api/login',
+            loginPostForApi: 'https://pub.bck6688.com/api/login',
+            punch: 'https://pub.bck6688.com/api/punchCard/'
         },
         testing: {
             login: 'https://www-bck.bckplat.info/login',
             loginPost: 'https://www-bck.bckplat.info/api/login',
-            loginPostForApi: 'http://pub.bck.bckplat.info/api/login',
+            loginPostForApi: 'https://pub-bck.bckplat.info/api/login',
             punch: 'http://pub.bck.bckplat.info/api/punchCard/' // 0:上班, 1:下班
         },
-
     },
     loginInfo: {
         account: process.env.account,
