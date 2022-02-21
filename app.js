@@ -2,41 +2,16 @@ require('dotenv').config()
 const puppeteer = require("puppeteer")
 const { createWorker } = require('tesseract.js')
 const worker = createWorker()
-const prompts = require('prompts')
 const config = require('./config')
-const child_process = require('child_process')
 const appSite = process.env.app_site
+const helper = require('./helper')
 
 let toDo
 
-const execCommand = (cmd) => {
-    child_process.exec(cmd, function (error, stdout, stderr) {
-        if (error) console.log(error)
-    })
-}
-
-const askWhatToDo = async () => {
-    const response = await prompts(config.initQuestions)
-    switch (response.action) {
-        case 1:
-            toDo = 'punchIn'
-            execCommand('msg %username% /time:10 "執行打卡上班"')
-            console.log('執行打卡上班')
-            break
-        case 2:
-            toDo = 'punchOut'
-            execCommand('msg %username% /time:10 "執行打卡下班"')
-            console.log('執行打卡下班')
-            break
-        default:
-            toDo = 'nothing'
-            console.log('已確認不動作')
-    }
-}
-
 const openPage = async () => {
 
-    await askWhatToDo().then(() => {
+    await helper.askWhatToDo().then((res) => {
+        toDo = res
         console.log('To Do : ' + toDo)
         if (toDo == 'nothing') process.exit()
     })

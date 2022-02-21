@@ -1,37 +1,9 @@
 require('dotenv').config()
 const axios = require('axios')
 const config = require('./config')
-const prompts = require('prompts')
-const child_process = require('child_process')
 const appSite = process.env.app_site
-const { account, password } = process.env
-
-let toDo
-
-const execCommand = (cmd) => {
-    child_process.exec(cmd, function (error, stdout, stderr) {
-        if (error) console.log(error)
-    })
-}
-
-const askWhatToDo = async () => {
-    const response = await prompts(config.initQuestions)
-    switch (response.action) {
-        case 1:
-            toDo = 'punchIn'
-            execCommand('msg %username% /time:10 "執行打卡上班"')
-            console.log('執行打卡上班')
-            break
-        case 2:
-            toDo = 'punchOut'
-            execCommand('msg %username% /time:10 "執行打卡下班"')
-            console.log('執行打卡下班')
-            break
-        default:
-            toDo = 'nothing'
-            console.log('已確認不動作')
-    }
-}
+const { account, password, login_captcha, login_key } = process.env
+const helper = require('./helper')
 
 const login = async () => {
     console.log(appSite === 'master' ? '正式站打卡' : '測試站打卡')
@@ -45,8 +17,8 @@ const login = async () => {
         if (appSite === 'master') {
             loginData = {
                 ...loginData,
-                captcha: '5720',
-                key: '$2y$10$ZNQzIIiWpyuBoeSLnTFKS.GWNSCAcjhCfQHuYP.fuuIT4qHvT99la'
+                captcha: login_captcha,
+                key: login_key
             }
         }
 
@@ -70,7 +42,7 @@ const login = async () => {
 }
 
 const init = async () => {
-    await askWhatToDo().then(async () => {
+    await helper.askWhatToDo().then(async (toDo) => {
 
         if (toDo === 'nothing') return
 
@@ -80,9 +52,7 @@ const init = async () => {
             'Authorization': `Bearer ${token}`
         }
 
-        // console.log('打卡')
         // console.log(config.url[appSite].punch + (toDo == 'punchIn' ? '0' : '1'))
-
         axios
             .post(config.url[appSite].punch + (toDo == 'punchIn' ? '0' : '1'), { account, password }, {
                 headers
